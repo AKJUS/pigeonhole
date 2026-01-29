@@ -11,6 +11,7 @@
 #include "mkdir-parents.h"
 #include "ioloop.h"
 #include "settings.h"
+#include "settings-consts.h"
 
 #include "sieve-common.h"
 #include "sieve-error-private.h"
@@ -313,12 +314,12 @@ int sieve_storage_alloc_with_settings(struct sieve_instance *svinst,
 		e_debug(storage->event, "Directory for binaries: %s",
 			storage->bin_path);
 	}
-	if (storage->max_storage > 0) {
+	if (storage->max_storage != SET_SIZE_UNLIMITED) {
 		e_debug(storage->event, "quota: "
 			"Storage limit: %"PRIuUOFF_T" bytes",
 			storage->max_storage);
 	}
-	if (storage->max_scripts > 0) {
+	if (storage->max_scripts != SET_UINT_UNLIMITED) {
 		e_debug(storage->event, "quota: "
 			"Script count limit: %u scripts",
 			storage->max_scripts);

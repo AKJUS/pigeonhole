@@ -8,6 +8,7 @@
 #include "sieve-script.h"
 
 #include "sieve-file-storage.h"
+#include "settings-consts.h"
 
 #include <stdio.h>
 #include <dirent.h>
@@ -74,7 +75,7 @@ int sieve_file_storage_quota_havespace(struct sieve_storage *storage,
 			replaced = TRUE;
 
 		/* Check count quota if necessary */
-		if (storage->max_scripts > 0) {
+		if (storage->max_scripts != SET_UINT_UNLIMITED) {
 			if (!replaced) {
 				script_count++;
 
@@ -88,7 +89,7 @@ int sieve_file_storage_quota_havespace(struct sieve_storage *storage,
 		}
 
 		/* Check storage quota if necessary */
-		if (storage->max_storage > 0) {
+		if (storage->max_storage != SET_SIZE_UNLIMITED) {
 			const char *path;
 			struct stat st;
 

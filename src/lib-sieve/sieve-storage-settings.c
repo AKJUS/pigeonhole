@@ -57,8 +57,8 @@ static const struct sieve_storage_settings sieve_storage_default_settings = {
 	.script_name = "",
 	.script_bin_path = "",
 
-	.quota_storage_size = 0,
-	.quota_script_count = 0,
+	.quota_storage_size = SET_SIZE_UNLIMITED,
+	.quota_script_count = SET_UINT_UNLIMITED,
 
 	.storages = ARRAY_INIT,
 };
@@ -95,6 +95,15 @@ sieve_storage_settings_check(void *_set, pool_t pool ATTR_UNUSED,
 		*error_r = t_strdup_printf(
 			"Invalid script name '%s'",
 			str_sanitize(set->script_name, 128));
+		return FALSE;
+	}
+
+	if (set->quota_storage_size == 0) {
+		*error_r = "quota_storage_size must not be 0";
+		return FALSE;
+	}
+	if (set->quota_script_count == 0) {
+		*error_r = "quota_script_count must not be 0";
 		return FALSE;
 	}
 
