@@ -86,6 +86,8 @@ struct imap_sieve_mailbox_transaction {
 	struct mailbox_transaction_context *src_mail_trans;
 
 	ARRAY_TYPE(imap_sieve_mailbox_event) events;
+
+	bool flags_changed:1;
 };
 
 struct imap_sieve_mail {
@@ -227,6 +229,8 @@ imap_sieve_add_mailbox_event(struct mailbox_transaction_context *t,
 
 	i_assert(ismt->dest_box == NULL || ismt->dest_box == dest_box);
 	ismt->dest_box = dest_box;
+	if (changed_flags != NULL)
+		ismt->flags_changed = TRUE;
 
 	event = imap_sieve_create_mailbox_event(t, dest_mail);
 	event->changed_flags = p_strdup(ismt->pool, changed_flags);
@@ -539,10 +543,10 @@ imap_sieve_mailbox_transaction_run(
 	struct mailbox_header_lookup_ctx *headers_ctx;
 	struct mailbox_transaction_context *st;
 	struct mailbox *sbox;
-	struct imap_sieve_run *isrun, *isrun_src;
+	struct imap_sieve_run *isrun, *isrun_src, *isrun_iflag;
 	struct seq_range_iter siter;
 	const char *cause, *script_name = NULL;
-	bool can_discard;
+	bool can_discard, implicit_flags;
 	struct mail *mail, *src_mail = NULL;
 	int ret, eret;
 
@@ -565,16 +569,19 @@ imap_sieve_mailbox_transaction_run(
 		isuser->isieve = imap_sieve_init(isuser->client);
 
 	can_discard = FALSE;
+	implicit_flags = FALSE;
 	switch (isuser->cur_cmd) {
 	case IMAP_SIEVE_CMD_APPEND:
 		cause = "APPEND";
 		can_discard = TRUE;
+		implicit_flags = ismt->flags_changed;
 		break;
 	case IMAP_SIEVE_CMD_COPY:
 	case IMAP_SIEVE_CMD_MOVE:
 		i_assert(src_box != NULL);
 		cause = "COPY";
 		can_discard = TRUE;
+		implicit_flags = ismt->flags_changed;
 		break;
 	case IMAP_SIEVE_CMD_STORE:
 	case IMAP_SIEVE_CMD_OTHER:
@@ -603,12 +610,27 @@ imap_sieve_mailbox_transaction_run(
 			if (eret < 0)
 				ret = -1;
 		}
+
+		/* Initialize implicit flag script execution */
+		isrun_iflag = NULL;
+		if (ret >= 0 && implicit_flags) {
+			eret = imap_sieve_run_init(
+				isuser->isieve, dest_isbox->event,
+				dest_box, src_box, "FLAG", script_name,
+				SIEVE_STORAGE_TYPE_BEFORE,
+				SIEVE_STORAGE_TYPE_AFTER, &isrun_iflag);
+			if (eret < 0)
+				ret = -1;
+			if (eret > 0)
+				ret = 1;
+		}
 	} T_END;
 
 	if (ret <= 0) {
 		// FIXME: temp fail should be handled properly
 		imap_sieve_run_deinit(&isrun);
 		imap_sieve_run_deinit(&isrun_src);
+		imap_sieve_run_deinit(&isrun_iflag);
 		return 0;
 	}
 
@@ -618,6 +640,7 @@ imap_sieve_mailbox_transaction_run(
 		mailbox_free(&sbox);
 		imap_sieve_run_deinit(&isrun);
 		imap_sieve_run_deinit(&isrun_src);
+		imap_sieve_run_deinit(&isrun_iflag);
 		return -1;
 	}
 
@@ -631,7 +654,7 @@ imap_sieve_mailbox_transaction_run(
 	seq_range_array_iter_init(&siter, &changes->saved_uids);
 	array_foreach(&ismt->events, mevent) {
 		uint32_t uid;
-		bool fatal;
+		bool fatal, expunged;
 
 		/* Determine UID for saved message */
 		if (mevent->dest_mail_uid > 0)
@@ -655,10 +678,12 @@ imap_sieve_mailbox_transaction_run(
 			continue;
 		}
 
-		/* Run scripts for this mail */
+		/* Run scripts for this mail (at destination) */
+		expunged = FALSE;
 		if (isrun != NULL) {
 			ret = imap_sieve_run_mail(isrun, mail,
-						  mevent->changed_flags,
+						  (isrun_iflag != NULL ? NULL :
+						   mevent->changed_flags),
 						  &fatal);
 			if (fatal)
 				break;
@@ -668,7 +693,31 @@ imap_sieve_mailbox_transaction_run(
 				/* Sieve error; keep */
 				continue;
 			}
-			if (ret <= 0 || !can_discard) {
+			if (ret == 0 || !can_discard) {
+				/* Keep */
+			} else if (!isuser->expunge_discarded) {
+				/* Mark as \Deleted */
+				mail_update_flags(mail, MODIFY_ADD,
+						  MAIL_DELETED);
+			} else {
+				/* Expunge */
+				expunged = TRUE;
+				mail_expunge(mail);
+			}
+		}
+
+		/* Run flag scripts for this mail
+		   (implicit FLAG after COPY event) */
+		if (!expunged && isrun_iflag != NULL) {
+			ret = imap_sieve_run_mail(isrun_iflag, mail,
+						  mevent->changed_flags,
+						  &fatal);
+			/* Handle the result */
+			if (ret < 0) {
+				/* Sieve error; keep */
+				continue;
+			}
+			if (ret == 0 || !can_discard) {
 				/* Keep */
 			} else if (!isuser->expunge_discarded) {
 				/* Mark as \Deleted */
@@ -680,8 +729,9 @@ imap_sieve_mailbox_transaction_run(
 			}
 		}
 
-		imap_sieve_mailbox_run_copy_source(
-			ismt, isrun_src, mevent, &src_mail, &fatal);
+		/* Run copy-source-after scripts for this mail (at source) */
+		imap_sieve_mailbox_run_copy_source(ismt, isrun_src, mevent,
+						   &src_mail, &fatal);
 		if (fatal)
 			break;
 	}
@@ -692,6 +742,7 @@ imap_sieve_mailbox_transaction_run(
 	if (src_mail != NULL)
 		mail_free(&src_mail);
 	imap_sieve_run_deinit(&isrun);
+	imap_sieve_run_deinit(&isrun_iflag);
 	imap_sieve_run_deinit(&isrun_src);
 	mailbox_free(&sbox);
 	return ret;
