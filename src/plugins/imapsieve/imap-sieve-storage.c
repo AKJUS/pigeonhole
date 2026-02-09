@@ -472,15 +472,15 @@ imap_sieve_mailbox_run_copy_source(
 	const struct imap_sieve_mailbox_event *mevent, struct mail **src_mail,
 	bool *fatal_r)
 {
-	struct mailbox *src_box = ismt->src_box;
-	struct imap_sieve_mailbox *src_isbox =
-		IMAP_SIEVE_CONTEXT_REQUIRE(src_box);
-	int ret;
-
 	*fatal_r = FALSE;
 
 	if (isrun == NULL)
 		return;
+
+	struct mailbox *src_box = ismt->src_box;
+	struct imap_sieve_mailbox *src_isbox =
+		IMAP_SIEVE_CONTEXT_REQUIRE(src_box);
+	int ret;
 
 	i_assert(ismt->src_mail_trans->box == src_box);
 	i_assert(mevent->src_mail_uid > 0);
