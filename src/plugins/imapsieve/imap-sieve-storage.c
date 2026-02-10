@@ -82,7 +82,7 @@ struct imap_sieve_mailbox_transaction {
 
 	union mailbox_transaction_module_context module_ctx;
 
-	struct mailbox *src_box;
+	struct mailbox *src_box, *dest_box;
 	struct mailbox_transaction_context *src_mail_trans;
 
 	ARRAY_TYPE(imap_sieve_mailbox_event) events;
@@ -218,15 +218,15 @@ imap_sieve_create_mailbox_event(struct mailbox_transaction_context *t,
 
 static void
 imap_sieve_add_mailbox_event(struct mailbox_transaction_context *t,
-			     struct mail *dest_mail, struct mailbox *src_box,
+			     struct mail *dest_mail, struct mailbox *dest_box,
 			     const char *changed_flags)
 {
 	struct imap_sieve_mailbox_transaction *ismt =
 		IMAP_SIEVE_CONTEXT_REQUIRE(t);
 	struct imap_sieve_mailbox_event *event;
 
-	i_assert(ismt->src_box == NULL || ismt->src_box == src_box);
-	ismt->src_box = src_box;
+	i_assert(ismt->dest_box == NULL || ismt->dest_box == dest_box);
+	ismt->dest_box = dest_box;
 
 	event = imap_sieve_create_mailbox_event(t, dest_mail);
 	event->changed_flags = p_strdup(ismt->pool, changed_flags);
@@ -241,10 +241,12 @@ imap_sieve_add_mailbox_copy_event(struct mailbox_transaction_context *t,
 	struct imap_sieve_mailbox_event *event;
 
 	i_assert(ismt->src_box == NULL || ismt->src_box == src_mail->box);
+	i_assert(ismt->dest_box == NULL || ismt->dest_box == dest_mail->box);
 	i_assert(ismt->src_mail_trans == NULL ||
 		 ismt->src_mail_trans == src_mail->transaction);
 
 	ismt->src_box = src_mail->box;
+	ismt->dest_box = dest_mail->box;
 	ismt->src_mail_trans = src_mail->transaction;
 
 	event = imap_sieve_create_mailbox_event(t, dest_mail);
