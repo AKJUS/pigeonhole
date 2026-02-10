@@ -633,9 +633,10 @@ imap_sieve_mailbox_transaction_run(
 			uid = mevent->dest_mail_uid;
 		else if (!seq_range_array_iter_nth(&siter, mevent->save_seq,
 						   &uid)) {
-			/* already gone for some reason */
+			/* Already gone for some reason */
 			e_debug(dest_isbox->event,
-				"Message for Sieve event gone");
+				"Message for Sieve event gone (seq=%u)",
+				mevent->save_seq);
 			continue;
 		}
 
