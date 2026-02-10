@@ -586,6 +586,8 @@ void imap_sieve_run_deinit(struct imap_sieve_run **_isrun)
 	struct imap_sieve_run *isrun = *_isrun;
 	unsigned int i;
 
+	if (isrun == NULL)
+		return;
 	*_isrun = NULL;
 
 	for (i = 0; i < isrun->scripts_count; i++) {

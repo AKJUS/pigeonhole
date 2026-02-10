@@ -595,8 +595,7 @@ imap_sieve_mailbox_transaction_run(
 	if (mailbox_sync(sbox, 0) < 0) {
 		mailbox_free(&sbox);
 		imap_sieve_run_deinit(&isrun);
-		if (isrun_src != NULL)
-			imap_sieve_run_deinit(&isrun_src);
+		imap_sieve_run_deinit(&isrun_src);
 		return -1;
 	}
 
@@ -667,8 +666,7 @@ imap_sieve_mailbox_transaction_run(
 	if (src_mail != NULL)
 		mail_free(&src_mail);
 	imap_sieve_run_deinit(&isrun);
-	if (isrun_src != NULL)
-		imap_sieve_run_deinit(&isrun_src);
+	imap_sieve_run_deinit(&isrun_src);
 	mailbox_free(&sbox);
 	return ret;
 }
