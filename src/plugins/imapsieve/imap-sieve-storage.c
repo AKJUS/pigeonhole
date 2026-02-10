@@ -91,6 +91,7 @@ struct imap_sieve_mailbox_transaction {
 struct imap_sieve_mail {
 	union mail_module_context module_ctx;
 
+	struct imap_sieve_mailbox_event *event;
 	string_t *flags;
 };
 
@@ -193,14 +194,25 @@ imap_sieve_create_mailbox_event(struct mailbox_transaction_context *t,
 {
 	struct imap_sieve_mailbox_transaction *ismt =
 		IMAP_SIEVE_CONTEXT_REQUIRE(t);
+	struct mail_private *mail =
+		container_of(_mail, struct mail_private, mail);
+	struct imap_sieve_mail *ismail = IMAP_SIEVE_MAIL_CONTEXT(mail);
 	struct imap_sieve_mailbox_event *event;
 
-	if (!array_is_created(&ismt->events))
-		i_array_init(&ismt->events, 64);
+	if (ismail->event != NULL &&
+	    ismail->event->save_seq == t->save_count &&
+	    ismail->event->dest_mail_uid == _mail->uid)
+		event = ismail->event;
+	else {
+		if (!array_is_created(&ismt->events))
+			i_array_init(&ismt->events, 64);
+		event = array_append_space(&ismt->events);
+		event->save_seq = t->save_count;
+		event->dest_mail_uid = _mail->uid;
 
-	event = array_append_space(&ismt->events);
-	event->save_seq = t->save_count;
-	event->dest_mail_uid = _mail->uid;
+		ismail->event = event;
+	}
+
 	return event;
 }
 
