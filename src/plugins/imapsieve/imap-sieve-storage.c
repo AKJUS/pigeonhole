@@ -654,24 +654,28 @@ imap_sieve_mailbox_transaction_run(
 		}
 
 		/* Run scripts for this mail */
-		ret = imap_sieve_run_mail(isrun, mail, mevent->changed_flags,
-					  &fatal);
-		if (fatal)
-			break;
+		if (isrun != NULL) {
+			ret = imap_sieve_run_mail(isrun, mail,
+						  mevent->changed_flags,
+						  &fatal);
+			if (fatal)
+				break;
 
-		/* Handle the result */
-		if (ret < 0) {
-			/* Sieve error; keep */
-			continue;
-		}
-		if (ret <= 0 || !can_discard) {
-			/* Keep */
-		} else if (!isuser->expunge_discarded) {
-			/* Mark as \Deleted */
-			mail_update_flags(mail, MODIFY_ADD, MAIL_DELETED);
-		} else {
-			/* Expunge */
-			mail_expunge(mail);
+			/* Handle the result */
+			if (ret < 0) {
+				/* Sieve error; keep */
+				continue;
+			}
+			if (ret <= 0 || !can_discard) {
+				/* Keep */
+			} else if (!isuser->expunge_discarded) {
+				/* Mark as \Deleted */
+				mail_update_flags(mail, MODIFY_ADD,
+						  MAIL_DELETED);
+			} else {
+				/* Expunge */
+				mail_expunge(mail);
+			}
 		}
 
 		imap_sieve_mailbox_run_copy_source(
