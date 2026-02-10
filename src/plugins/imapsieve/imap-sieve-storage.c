@@ -189,7 +189,7 @@ imap_sieve_mailbox_get_script(struct mailbox *box, const char **script_name_r)
 
 static struct imap_sieve_mailbox_event *
 imap_sieve_create_mailbox_event(struct mailbox_transaction_context *t,
-				struct mail *dest_mail)
+				struct mail *_mail)
 {
 	struct imap_sieve_mailbox_transaction *ismt =
 		IMAP_SIEVE_CONTEXT_REQUIRE(t);
@@ -200,7 +200,7 @@ imap_sieve_create_mailbox_event(struct mailbox_transaction_context *t,
 
 	event = array_append_space(&ismt->events);
 	event->save_seq = t->save_count;
-	event->dest_mail_uid = dest_mail->uid;
+	event->dest_mail_uid = _mail->uid;
 	return event;
 }
 
