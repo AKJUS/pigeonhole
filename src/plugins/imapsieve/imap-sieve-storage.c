@@ -542,7 +542,7 @@ imap_sieve_mailbox_transaction_run(
 	const char *cause, *script_name = NULL;
 	bool can_discard;
 	struct mail *mail, *src_mail = NULL;
-	int ret;
+	int ret, eret;
 
 	if (ismt == NULL || !array_is_created(&ismt->events)) {
 		/* Nothing to do */
@@ -594,16 +594,19 @@ imap_sieve_mailbox_transaction_run(
 		isrun_src = NULL;
 		if (ret > 0 && ismt->src_mail_trans != NULL &&
 		    isuser->cur_cmd == IMAP_SIEVE_CMD_COPY) {
-			if (imap_sieve_run_init(
+			eret = imap_sieve_run_init(
 				isuser->isieve, dest_isbox->event,
 				dest_box, src_box, cause, NULL,
-				NULL, "copy-source-after", &isrun_src) <= 0)
-				isrun_src = NULL;
+				NULL, "copy-source-after", &isrun_src);
+			if (eret < 0)
+				ret = -1;
 		}
 	} T_END;
 
 	if (ret <= 0) {
 		// FIXME: temp fail should be handled properly
+		imap_sieve_run_deinit(&isrun);
+		imap_sieve_run_deinit(&isrun_src);
 		return 0;
 	}
 
