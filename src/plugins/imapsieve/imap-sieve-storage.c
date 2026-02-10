@@ -662,23 +662,22 @@ imap_sieve_mailbox_transaction_run(
 		/* Handle the result */
 		if (ret < 0) {
 			/* Sieve error; keep */
-		} else {
-			if (ret <= 0 || !can_discard) {
-				/* Keep */
-			} else if (!isuser->expunge_discarded) {
-				/* Mark as \Deleted */
-				mail_update_flags(mail,
-						  MODIFY_ADD, MAIL_DELETED);
-			} else {
-				/* Expunge */
-				mail_expunge(mail);
-			}
-
-			imap_sieve_mailbox_run_copy_source(
-				ismt, isrun_src, mevent, &src_mail, &fatal);
-			if (fatal)
-				break;
+			continue;
 		}
+		if (ret <= 0 || !can_discard) {
+			/* Keep */
+		} else if (!isuser->expunge_discarded) {
+			/* Mark as \Deleted */
+			mail_update_flags(mail, MODIFY_ADD, MAIL_DELETED);
+		} else {
+			/* Expunge */
+			mail_expunge(mail);
+		}
+
+		imap_sieve_mailbox_run_copy_source(
+			ismt, isrun_src, mevent, &src_mail, &fatal);
+		if (fatal)
+			break;
 	}
 
 	/* Cleanup */
