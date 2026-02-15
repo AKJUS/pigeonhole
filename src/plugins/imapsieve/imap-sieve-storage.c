@@ -247,7 +247,8 @@ static void
 imap_sieve_mail_update_flags(struct mail *_mail, enum modify_type modify_type,
 			     enum mail_flags flags)
 {
-	struct mail_private *mail = (struct mail_private *)_mail;
+	struct mail_private *mail =
+		container_of(_mail, struct mail_private, mail);
 	struct imap_sieve_mail *ismail = IMAP_SIEVE_MAIL_CONTEXT(mail);
 	enum mail_flags old_flags, new_flags, changed_flags;
 
@@ -269,7 +270,8 @@ imap_sieve_mail_update_keywords(struct mail *_mail,
 				enum modify_type modify_type,
 				struct mail_keywords *keywords)
 {
-	struct mail_private *mail = (struct mail_private *)_mail;
+	struct mail_private *mail =
+		container_of(_mail, struct mail_private, mail);
 	struct imap_sieve_mail *ismail = IMAP_SIEVE_MAIL_CONTEXT(mail);
 	const char *const *old_keywords, *const *new_keywords;
 	unsigned int i, j;
@@ -310,7 +312,8 @@ imap_sieve_mail_update_keywords(struct mail *_mail,
 
 static void imap_sieve_mail_close(struct mail *_mail)
 {
-	struct mail_private *mail = (struct mail_private *)_mail;
+	struct mail_private *mail =
+		container_of(_mail, struct mail_private, mail);
 	struct mailbox_transaction_context *t = _mail->transaction;
 	struct imap_sieve_mailbox *isbox =
 		IMAP_SIEVE_CONTEXT_REQUIRE(_mail->box);
@@ -332,7 +335,8 @@ static void imap_sieve_mail_close(struct mail *_mail)
 
 static void imap_sieve_mail_free(struct mail *_mail)
 {
-	struct mail_private *mail = (struct mail_private *)_mail;
+	struct mail_private *mail =
+		container_of(_mail, struct mail_private, mail);
 	struct imap_sieve_mail *ismail = IMAP_SIEVE_MAIL_CONTEXT(mail);
 	string_t *flags = ismail->flags;
 
@@ -343,7 +347,8 @@ static void imap_sieve_mail_free(struct mail *_mail)
 
 static void imap_sieve_mail_allocated(struct mail *_mail)
 {
-	struct mail_private *mail = (struct mail_private *)_mail;
+	struct mail_private *mail =
+		container_of(_mail, struct mail_private, mail);
 	struct imap_sieve_mailbox_transaction *ismt =
 		IMAP_SIEVE_CONTEXT(_mail->transaction);
 	struct mail_user *user = _mail->box->storage->user;
