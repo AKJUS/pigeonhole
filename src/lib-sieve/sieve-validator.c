@@ -640,6 +640,18 @@ bool sieve_validator_extension_load(struct sieve_validator *valdtr,
 		reg->required = reg->required || required;
 		if (reg->arg == NULL)
 			reg->arg = ext_arg;
+
+		if (reg->loaded) {
+			/* Already loaded successfully before, e.g. because the
+			   script requires the same extension more than once.
+			   Loading it again would duplicate the validator state
+			   it registers, such as the default argument override
+			   chain, which is walked recursively while validating
+			   arguments. */
+			sieve_ast_extension_link(valdtr->ast, ext,
+						 reg->required);
+			return TRUE;
+		}
 	}
 
 	if (extdef->validator_load != NULL &&
