@@ -289,7 +289,10 @@ cmd_filter_sieve_script_parse_value_arg(struct imap_filter_context *ctx)
 			if (args[0].type == IMAP_ARG_LITERAL_SIZE) {
 				/* Synchronizing literal; the client waits for
 				   a command continuation request and will not
-				   send the script data. */
+				   send the script data. The CRLF ending the
+				   command line was already read by the parser,
+				   so there is nothing left to skip. */
+				ctx->cmd->client->input_skip_line = FALSE;
 				return -1;
 			}
 			/* Non-synchronizing literal; the script data is
