@@ -817,6 +817,13 @@ void sieve_validator_argument_override(struct sieve_validator *valdtr,
 {
 	struct sieve_default_argument *arg;
 
+	if (valdtr->default_arguments[type].arg_def == arg_def &&
+	    valdtr->default_arguments[type].ext == ext) {
+		/* Already the active override; don't extend the overrides
+		   chain with a duplicate. */
+		return;
+	}
+
 	if (valdtr->default_arguments[type].arg_def != NULL) {
 		arg = p_new(valdtr->pool, struct sieve_default_argument, 1);
 		*arg = valdtr->default_arguments[type];
