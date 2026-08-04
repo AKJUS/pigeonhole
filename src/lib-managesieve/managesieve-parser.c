@@ -760,5 +760,6 @@ quoted_string_istream_create(struct managesieve_parser *parser)
 	qsstream->istream.istream.blocking = parser->input->blocking;
 	qsstream->istream.istream.seekable = FALSE;
 	return i_stream_create(&qsstream->istream, parser->input,
-			       i_stream_get_fd(parser->input), 0);
+			       i_stream_get_fd(parser->input),
+			       ISTREAM_HIDDEN_INPUTS_NONE, 0);
 }
