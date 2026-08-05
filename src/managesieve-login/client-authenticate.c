@@ -26,7 +26,7 @@ const char *client_authenticate_get_capabilities(struct client *client)
 	string_t *str;
 
 	str = t_str_new(128);
-	mech = sasl_server_get_advertised_mechs(client, &count);
+	mech = sasl_proxy_get_advertised_mechs(client, &count);
 
 	for (i = 0; i < count; i++) {
 		if (i > 0)
