@@ -65,7 +65,7 @@ const struct setting_keyvalue managesieve_settings_service_settings_defaults[] =
 
 static struct setting_define managesieve_setting_defines[] = {
 	DEF(BOOL, verbose_proctitle),
-	DEF(STR, rawlog_dir),
+	DEF(PATH_DIR, rawlog_dir),
 
 	DEF(SIZE, managesieve_max_line_length),
 	DEF(STR, managesieve_implementation_string),
