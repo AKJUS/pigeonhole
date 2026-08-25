@@ -585,7 +585,17 @@ imap_sieve_mailbox_transaction_run(
 		break;
 	case IMAP_SIEVE_CMD_COPY:
 	case IMAP_SIEVE_CMD_MOVE:
-		i_assert(src_box != NULL);
+		if (src_box == NULL) {
+			/* This transaction has no copy events; it only has
+			   flag change events. This happens when something
+			   other than the COPY/MOVE itself changes flags in a
+			   mailbox while the command is running. For example,
+			   a virtual mailbox propagates pending flag changes
+			   to its backend mailboxes while it is synchronized
+			   for the COPY/MOVE command. */
+			cause = "FLAG";
+			break;
+		}
 		cause = "COPY";
 		can_discard = TRUE;
 		implicit_flags = ismt->flags_changed;
