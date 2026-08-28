@@ -35,3 +35,5 @@ EXTRA_DIST = \
 	devel \
 	$(docfiles) \
 	stamp-man
+
+DISTCLEANFILES = stamp-man
