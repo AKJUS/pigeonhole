@@ -245,6 +245,9 @@ static const char *ext_enotify_uri_scheme_parse(const char **uri_p)
 	return str_c(scheme);
 }
 
+/* Parse the option string into its name and value parts. The nenv parameter
+   can be NULL, in which case no errors are reported.
+ */
 static bool
 ext_enotify_option_parse(struct sieve_enotify_env *nenv,
 			 const char *option, bool name_only,
@@ -269,7 +272,8 @@ ext_enotify_option_parse(struct sieve_enotify_env *nenv,
 
 	/* Explicitly report empty option as such */
 	if (*p == '\0') {
-		sieve_enotify_error(nenv, "empty option specified");
+		if (nenv != NULL)
+			sieve_enotify_error(nenv, "empty option specified");
 		return FALSE;
 	}
 
@@ -284,9 +288,12 @@ ext_enotify_option_parse(struct sieve_enotify_env *nenv,
 
 	/* Parsing must end at '=' and we must parse at least one character */
 	if (*p != '=' || p == option) {
-		sieve_enotify_error(
-			nenv, "invalid option name specified in option '%s'",
-			str_sanitize(option, 80));
+		if (nenv != NULL) {
+			sieve_enotify_error(
+				nenv,
+				"invalid option name specified in option '%s'",
+				str_sanitize(option, 80));
+		}
 		return FALSE;
 	}
 
@@ -311,10 +318,12 @@ ext_enotify_option_parse(struct sieve_enotify_env *nenv,
 
 	/* Parse must end at end of string */
 	if (*p != '\0') {
-		sieve_enotify_error(
-			nenv, "notify command: "
-			"invalid option value specified in option '%s'",
-			str_sanitize(option, 80));
+		if (nenv != NULL) {
+			sieve_enotify_error(
+				nenv, "notify command: "
+				"invalid option value specified in option '%s'",
+				str_sanitize(option, 80));
+		}
 		return FALSE;
 	}
 

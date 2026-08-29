@@ -3,6 +3,7 @@ require "comparator-i;ascii-numeric";
 require "relational";
 
 require "enotify";
+require "variables";
 
 test "Invalid URI (FIXME: count only)" {
 	if test_script_compile "errors/uri.sieve" {
@@ -41,5 +42,15 @@ test "Invalid :options argument (FIXME: count only)" {
 
 	if not test_error :count "eq" :comparator "i;ascii-numeric" "6" {
 		test_fail "wrong number of errors reported";
+	}
+}
+
+test "Valid :options argument in variable string" {
+	if not test_script_compile "errors/options-variable.sieve" {
+		test_fail "compile should have succeeded";
+	}
+
+	if not test_error :count "eq" :comparator "i;ascii-numeric" "0" {
+		test_fail "errors reported for unverifiable option";
 	}
 }
