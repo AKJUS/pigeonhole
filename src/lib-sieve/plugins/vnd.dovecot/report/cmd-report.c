@@ -15,6 +15,7 @@
 #include "rfc2822.h"
 
 #include "sieve-common.h"
+#include "sieve-limits.h"
 #include "sieve-stringlist.h"
 #include "sieve-code.h"
 #include "sieve-address.h"
@@ -476,10 +477,13 @@ act_report_send(const struct sieve_action_exec_env *aenv,
 			aenv, msgdata->mail,
 			"failed to read header field 'subject'");
 	}
-	if (ret > 0 && headers[0] != NULL)
-		subject = t_strconcat("Report: ", headers[0], NULL);
-	else
+	if (ret > 0 && headers[0] != NULL) {
+		subject = str_sanitize_utf8(
+			t_strconcat("Report: ", headers[0], NULL),
+			SIEVE_MAX_SUBJECT_HEADER_CODEPOINTS);
+	} else {
 		subject = "Report: (message without subject)";
+	}
 
 	/* Determine from address */
 	if (report_from.type == SIEVE_ADDRESS_SOURCE_POSTMASTER) {
