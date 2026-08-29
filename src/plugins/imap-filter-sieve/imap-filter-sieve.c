@@ -379,12 +379,21 @@ int imap_filter_sieve_compile(struct imap_filter_sieve_context *sctx,
 
 	for (i = 0; i < count; i++) {
 		struct sieve_script *script = scripts[i].script;
+		enum sieve_compile_flags cpflags = 0;
 
 		i_assert(script != NULL);
 
+		/* Restrict extensions that are limited to global scripts. This
+		   matches the NOGLOBAL execution flag used when the script is
+		   run, so that such scripts are rejected cleanly at compile time
+		   rather than reaching a runtime failure. */
+		if (script == sctx->user_script)
+			cpflags |= SIEVE_COMPILE_FLAG_NOGLOBAL;
+
 		scripts[i].binary =
-			imap_sieve_filter_open_script(sctx, script, 0, ehandler,
-						      FALSE, &error_code);
+			imap_sieve_filter_open_script(sctx, script, cpflags,
+						      ehandler, FALSE,
+						      &error_code);
 		if (scripts[i].binary == NULL) {
 			if (error_code != SIEVE_ERROR_NOT_VALID) {
 				const char *errormsg =
